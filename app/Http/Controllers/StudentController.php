@@ -8,11 +8,41 @@ use App\Models\Student;
 class StudentController extends Controller
 {
     // Display a list of students
-    public function index()
-    {
-        $students = Student::all(); // Later: add filtering logic
-        return view('index', compact('students'));
+    public function index(Request $request)
+{
+    $query = Student::query();
+
+    if ($request->has('name') && $request->name !== null) {
+        $query->where('name', 'like', '%' . $request->name . '%');
     }
+
+    if ($request->has('minAge') && is_numeric($request->minAge)) {
+        $query->where('age', '>=', $request->minAge);
+    }
+
+    if ($request->has('maxAge') && is_numeric($request->maxAge)) {
+        $query->where('age', '<=', $request->maxAge);
+    }
+
+    $students = $query->get();
+
+    if ($request->ajax()) {
+        
+        $html = '';
+        foreach ($students as $student) {
+            $html .= '
+                <tr>
+                    <td>' . $student->name . '</td>
+                    <td>' . $student->age . '</td>
+                    <td>' . $student->email . '</td>
+                </tr>
+            ';
+        }
+        return response($html);
+    }
+
+    return view('index', compact('students'));
+}
 
     // Show the form to create a new student
     public function create()
